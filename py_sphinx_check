@@ -1,0 +1,125 @@
+#!/usr/bin/env python26
+
+# (c) 2013, Ovais Tariq <ovaistariq@gmail.com>
+#
+# This file is part of py_sphinx_check
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+from lib.sphinxapi import *
+from SimpleHTTPServer import SimpleHTTPRequestHandler
+import BaseHTTPServer
+import optparse
+import sys
+from datetime import datetime
+
+class Sphinx_options(object):
+    # Sphinx server configuration
+    SPHINX_HOST = 'localhost'
+    SPHINX_PORT = 3320
+
+    # Sphinx search related configuration
+    SPHINX_INDEX = 'gcu'
+    SEARCH_QUERY = 'I Love Sphinx'
+    MATCH_MODE = SPH_MATCH_ALL
+    MAX_MATCHES = 10
+    RESULTSET_LIMIT = 1
+
+class Sphinx_check(object):
+    def __init__(self):
+        self._client = SphinxClient()
+        self._client.SetServer(Sphinx_options.SPHINX_HOST, 
+                Sphinx_options.SPHINX_PORT)
+        self._client.SetWeights([100, 1])
+        self._client.SetMatchMode(Sphinx_options.MATCH_MODE)
+        self._client.SetLimits(0, Sphinx_options.RESULTSET_LIMIT, 
+                Sphinx_options.MAX_MATCHES)
+
+        self._test_msg = ''
+
+    def run_test(self):
+        result = self._client.Query(Sphinx_options.SEARCH_QUERY, 
+                Sphinx_options.SPHINX_INDEX)
+
+        if not result:
+            self._test_msg = "Error returned: %s" % self._client.GetLastError()
+            return False
+
+        self._test_msg = "Query '%s' returned %d of %d matches in %s seconds" % (
+                Sphinx_options.SEARCH_QUERY, result['total'],
+                result['total_found'], result['time'])
+
+        return True
+
+    def get_last_message(self):
+        return self._test_msg
+
+class Sphinx_check_server(BaseHTTPServer.BaseHTTPRequestHandler):
+    # HTTP response codes sent by the server
+    HTTP_ERROR_CODE = 503
+    HTTP_SUCCESS_CODE = 200
+
+    def do_OPTIONS(self):
+        self.do_GET()
+
+    def do_GET(self):
+        sphinx_check = Sphinx_check()
+
+        # Run the test to see if Sphinx Server is available
+        if sphinx_check.run_test() == False:
+            response_code = Sphinx_check_server.HTTP_ERROR_CODE
+        else:
+            response_code = Sphinx_check_server.HTTP_SUCCESS_CODE
+
+        # Send back the HTTP response
+        self.send_response(response_code)
+        self.send_header("Content-type", "text/html")
+        self.end_headers()
+        self.wfile.write(sphinx_check.get_last_message())
+
+def debug_message(message):
+    current_datetime = datetime.now().strftime("%Y-%m-%-d %H:%M:%S")
+    print "[%s] %s" % (current_datetime, message)
+
+def main():
+    # Setup command line options
+    parser = optparse.OptionParser()
+    parser.add_option('--sphinx-port', default=Sphinx_options.SPHINX_PORT,
+            help="Port Sphinx Server is listening on [default: %default]")
+    parser.add_option('--port', default=9300,
+            help="Port py_sphinx_check would be listening on [default: %default]")
+
+    # Parse command line options
+    options, args = parser.parse_args()
+
+    server_class = BaseHTTPServer.HTTPServer
+    handler_class = Sphinx_check_server
+
+    server_address = ('', options.port)
+    Sphinx_options.SPHINX_PORT = options.sphinx_port
+
+    httpd = server_class(server_address, handler_class)
+
+    debug_message("py_sphinx_check started, listening on port %s" %
+            options.port)
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        pass
+
+    httpd.server_close()
+    debug_message("py_sphinx_check stopped")
+
+if __name__ == "__main__":
+    main()
