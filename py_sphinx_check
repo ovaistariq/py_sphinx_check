@@ -30,7 +30,7 @@ class Sphinx_options(object):
     SPHINX_PORT = 3320
 
     # Sphinx search related configuration
-    SPHINX_INDEX = 'gcu'
+    SPHINX_INDEX = 'some_index_name'
     SEARCH_QUERY = 'I Love Sphinx'
     MATCH_MODE = SPH_MATCH_ALL
     MAX_MATCHES = 10
