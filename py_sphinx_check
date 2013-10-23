@@ -121,5 +121,7 @@ def main():
     httpd.server_close()
     debug_message("py_sphinx_check stopped")
 
+    sys.exit(0)
+
 if __name__ == "__main__":
     main()
