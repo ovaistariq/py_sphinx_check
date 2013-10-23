@@ -56,7 +56,7 @@ class Sphinx_check(object):
             self._test_msg = "Error returned: %s" % self._client.GetLastError()
             return False
 
-        self._test_msg = "Query '%s' returned %d of %d matches in %s seconds" % (
+        self._test_msg = "Query '%s' successful, returned %d of %d matches in %s seconds" % (
                 Sphinx_options.SEARCH_QUERY, result['total'],
                 result['total_found'], result['time'])
 
