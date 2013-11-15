@@ -19,6 +19,7 @@
 
 from lib.sphinxapi import *
 from SimpleHTTPServer import SimpleHTTPRequestHandler
+import SocketServer
 import BaseHTTPServer
 import optparse
 import sys
@@ -88,6 +89,10 @@ class Sphinx_check_server(BaseHTTPServer.BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(sphinx_check.get_last_message())
 
+class MultiThreadedHTTPServer(SocketServer.ThreadingMixIn,
+        BaseHTTPServer.HTTPServer):
+    pass
+
 def debug_message(message):
     current_datetime = datetime.now().strftime("%Y-%m-%-d %H:%M:%S")
     print "[%s] %s" % (current_datetime, message)
@@ -103,7 +108,8 @@ def main():
     # Parse command line options
     options, args = parser.parse_args()
 
-    server_class = BaseHTTPServer.HTTPServer
+    #server_class = BaseHTTPServer.HTTPServer
+    server_class = MultiThreadedHTTPServer
     handler_class = Sphinx_check_server
 
     server_address = ('', options.port)
