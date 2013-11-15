@@ -113,15 +113,8 @@ def main():
 
     debug_message("py_sphinx_check started, listening on port %s" %
             options.port)
-    try:
-        httpd.serve_forever()
-    except KeyboardInterrupt:
-        pass
 
-    httpd.server_close()
-    debug_message("py_sphinx_check stopped")
-
-    sys.exit(0)
+    httpd.serve_forever()
 
 if __name__ == "__main__":
     main()
