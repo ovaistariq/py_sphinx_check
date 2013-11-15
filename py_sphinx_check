@@ -89,6 +89,16 @@ class Sphinx_check_server(BaseHTTPServer.BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(sphinx_check.get_last_message())
 
+    def finish(self, *args, **kw):
+        try:
+            if not self.wfile.closed:
+                self.wfile.flush()
+                self.wfile.close()
+        except socket.error:
+            pass
+
+        self.rfile.close()
+
 class MultiThreadedHTTPServer(SocketServer.ThreadingMixIn,
         BaseHTTPServer.HTTPServer):
     pass
