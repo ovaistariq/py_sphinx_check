@@ -21,6 +21,7 @@ from lib.sphinxapi import *
 from SimpleHTTPServer import SimpleHTTPRequestHandler
 import SocketServer
 import BaseHTTPServer
+import socket
 import optparse
 import sys
 from datetime import datetime
